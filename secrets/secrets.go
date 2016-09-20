@@ -1,10 +1,8 @@
 package secrets
 
 import (
-	"fmt"
 	"os"
 
-	"github.com/Sirupsen/logrus"
 	flexvol "github.com/cloudnautique/rancher-flexvol"
 	"github.com/docker/docker/pkg/mount"
 )
@@ -15,27 +13,22 @@ const (
 
 type FlexVolume struct{}
 
-func (sv *FlexVolume) Name() string {
-	return "rancher-secrets"
+func (sv *FlexVolume) Init() error {
+	return nil
 }
 
-func (sv *FlexVolume) Init() (*flexvol.DriverOutput, error) {
-	return &flexvol.DriverOutput{Status: "Success"}, nil
+func (sv *FlexVolume) Attach(params map[string]interface{}) (string, error) {
+	return "", flexvol.ErrNotSupported
 }
 
-func (sv *FlexVolume) Attach(params map[string]interface{}) (*flexvol.DriverOutput, error) {
-	var volName string
-	var ok bool
+func (sv *FlexVolume) Detach(device string) error {
+	return flexvol.ErrNotSupported
+}
 
+func (sv *FlexVolume) Mount(dir, device string, params map[string]interface{}) error {
 	//Default volume mode
 	mode := int(0700)
-	status := "Failure"
 	mountOpts := "size=10m"
-	output := &flexvol.DriverOutput{}
-
-	if volName, ok = params["volumeName"].(string); !ok {
-		output.Message = "No volumeName set"
-	}
 
 	if uMode, ok := params["mode"].(int); ok {
 		mode = int(uMode)
@@ -45,47 +38,17 @@ func (sv *FlexVolume) Attach(params map[string]interface{}) (*flexvol.DriverOutp
 		mountOpts = mOpts
 	}
 
-	path := fmt.Sprintf("%s/%s", volRoot, volName)
-
-	os.Mkdir(path, os.FileMode(mode))
-
-	if err := mount.Mount("tmpfs", path, "tmpfs", mountOpts); err == nil {
-		status = "Success"
+	if err := os.MkdirAll(dir, os.FileMode(mode)); err != nil {
+		return err
 	}
 
-	output.Status = status
-	output.Device = path
+	if err := mount.Mount("tmpfs", dir, "tmpfs", mountOpts); err != nil {
+		return err
+	}
 
-	return output, nil
+	return nil
 }
 
-func (sv *FlexVolume) Detach(device string) (*flexvol.DriverOutput, error) {
-	status := "Failure"
-	output := &flexvol.DriverOutput{}
-
-	logrus.Errorf("DEVICE: %s", device)
-
-	output.Status = status
-
-	return output, nil
-}
-
-func (sv *FlexVolume) Mount(dir, device, params string) (*flexvol.DriverOutput, error) {
-	status := "Failure"
-	output := &flexvol.DriverOutput{}
-
-	output.Status = status
-	logrus.Errorf("Dir: %s, DEV: %s, PARAMS: %s", dir, device, params)
-
-	return output, nil
-}
-
-func (sv *FlexVolume) Unmount(dir string) (*flexvol.DriverOutput, error) {
-	status := "Failure"
-	output := &flexvol.DriverOutput{}
-
-	logrus.Errorf("Dir: %s", dir)
-	output.Status = status
-
-	return output, nil
+func (sv *FlexVolume) Unmount(dir string) error {
+	return mount.Unmount(dir)
 }

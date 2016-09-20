@@ -1,24 +1,28 @@
 package flexvol
 
-import "github.com/urfave/cli"
+import (
+	"fmt"
+
+	"github.com/urfave/cli"
+)
 
 func UnmountCommand() cli.Command {
 	return cli.Command{
-		Name:   "mount",
+		Name:   "unmount",
 		Usage:  "Unmount flex volume",
-		Action: UnmountVol,
+		Action: handleErr(UnmountVol),
 	}
 }
 
 func UnmountVol(c *cli.Context) error {
-	if len(c.Args()) > 2 {
-		output, err := volumeDriver.Unmount(c.Args()[0])
+	if len(c.Args()) > 0 {
+		err := volumeDriver.Unmount(c.Args()[0])
 		if err != nil {
-			output.Print()
 			return err
 		}
-		output.Print()
+		Success().Print()
+		return nil
 	}
 
-	return nil
+	return ErrIncorrectArgNumber
 }

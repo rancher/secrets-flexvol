@@ -1,24 +1,28 @@
 package flexvol
 
-import "github.com/urfave/cli"
+import (
+	"fmt"
+
+	"github.com/urfave/cli"
+)
 
 func DetachCommand() cli.Command {
 	return cli.Command{
 		Name:   "detach",
 		Usage:  "Detach flex volume",
-		Action: DetachVol,
+		Action: handleErr(DetachVol),
 	}
 }
 
 func DetachVol(c *cli.Context) error {
 	if len(c.Args()) > 0 {
-		output, err := volumeDriver.Detach(c.Args()[0])
+		err := volumeDriver.Detach(c.Args()[0])
 		if err != nil {
-			output.Print()
 			return err
 		}
-		output.Print()
+		Success().Print()
+		return nil
 	}
 
-	return nil
+	return ErrIncorrectArgNumber
 }

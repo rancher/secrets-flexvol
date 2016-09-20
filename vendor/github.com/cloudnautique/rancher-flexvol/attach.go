@@ -2,6 +2,7 @@ package flexvol
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/urfave/cli"
 )
@@ -10,7 +11,7 @@ func AttachCommand() cli.Command {
 	return cli.Command{
 		Name:   "attach",
 		Usage:  "Attach flex volume",
-		Action: AttachVol,
+		Action: handleErr(AttachVol),
 	}
 }
 
@@ -18,14 +19,17 @@ func AttachVol(c *cli.Context) error {
 	params := map[string]interface{}{}
 
 	if len(c.Args()) > 0 {
-		json.Unmarshal([]byte(c.Args()[0]), params)
-		output, err := volumeDriver.Attach(params)
-		if err != nil {
-			output.Print()
+		if err := json.Unmarshal([]byte(c.Args()[0]), &params); err != nil {
 			return err
 		}
-		output.Print()
+
+		device, err := volumeDriver.Attach(params)
+		if err != nil {
+			return err
+		}
+		Device(device).Print()
+		return nil
 	}
 
-	return nil
+	return ErrIncorrectArgNumber
 }
