@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	flexvol "github.com/cloudnautique/rancher-flexvol"
+	flexvol "github.com/rancher/rancher-flexvol"
 	"github.com/rancher/secrets-flexvol/secrets"
 )
 
