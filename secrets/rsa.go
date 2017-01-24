@@ -9,6 +9,8 @@ import (
 	"encoding/pem"
 	"errors"
 	"io/ioutil"
+
+	"github.com/Sirupsen/logrus"
 )
 
 // Decryptor handles decrypting messages
@@ -18,23 +20,28 @@ type Decryptor interface {
 
 type rsaDecryptor struct {
 	privateKeyPath string
+	key            *rsa.PrivateKey
 }
 
 // NewRSADecryptor returns an RSA decryptor
 func NewRSADecryptor(privateKeyPath string) (Decryptor, error) {
+	logrus.Infof("Looking for key at: %s", privateKeyPath)
+
+	key, err := loadPrivateKeyFromFile(privateKeyPath)
+	if err != nil {
+		return nil, err
+	}
+
 	return rsaDecryptor{
 		privateKeyPath: privateKeyPath,
+		key:            key,
 	}, nil
 }
 
 // Decrypt implments the decryptor interface
 func (r rsaDecryptor) Decrypt(cipherText string) ([]byte, error) {
-	key, err := loadPrivateKeyFromFile(r.privateKeyPath)
-	if err != nil {
-		return []byte{}, err
-	}
-
-	return rsaDecrypt(key, cipherText)
+	logrus.Infof("Called with ciphertext: %s", cipherText)
+	return rsaDecrypt(r.key, cipherText)
 }
 
 func loadPrivateKeyFromFile(keyPath string) (*rsa.PrivateKey, error) {

@@ -3,7 +3,7 @@ package secrets
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -15,69 +15,76 @@ import (
 
 // SecretGetter gets the secrets froma remote source
 type SecretGetter interface {
-	GetSecrets(params map[string]interface{}) (*bulkSecret, error)
+	GetSecrets(params map[string]interface{}) ([]secret, error)
 }
 
 type rancherSecretGetter struct {
-	url    string
-	client *http.Client
+	user     string
+	password string
+	url      string
+	client   *http.Client
+	token    *rancherToken
+}
+
+type rancherToken struct {
+	Value []byte `json:"value"`
 }
 
 // NewRancherSecretGetter returns a new rancherSecretGetter
 func NewRancherSecretGetter(params map[string]interface{}) (SecretGetter, error) {
+	rToken := &rancherToken{}
+
 	client, err := newRancherClient()
 	if err != nil {
 		return &rancherSecretGetter{}, err
 	}
 
-	authPair := os.Getenv("CATTLE_AGENT_ACCESS_KEY") + ":" + os.Getenv("CATTLE_AGENT_SECRET_KEY")
 	url := os.Getenv("CATTLE_URL")
-	urlSplit := strings.SplitN(url, "//", 2)
 
-	if len(urlSplit) == 2 {
-		url = urlSplit[0] + "//" + authPair + "@" + urlSplit[1]
+	if rawToken, ok := params["io.rancher.secrets.token"].(string); ok {
+		rToken.Value = []byte(strings.Replace(rawToken, "\\", "", -1))
 	}
 
 	return &rancherSecretGetter{
-		url:    url,
-		client: client,
+		user:     os.Getenv("CATTLE_AGENT_ACCESS_KEY"),
+		password: os.Getenv("CATTLE_AGENT_SECRET_KEY"),
+		url:      strings.Replace(url, "v1", "v2-beta", 1),
+		client:   client,
+		token:    rToken,
 	}, nil
 }
 
-func (rsg rancherSecretGetter) GetSecrets(params map[string]interface{}) (*bulkSecret, error) {
-	reqURL := rsg.url
-	returnSecrets := &bulkSecret{}
+func (rsg rancherSecretGetter) GetSecrets(params map[string]interface{}) ([]secret, error) {
+	reqURL := rsg.url + "/secrets"
+	returnSecrets := []secret{}
 
-	token, ok := params["io.rancher.secrets.token"]
-	if !ok {
-		return returnSecrets, errors.New("No token found")
-	}
-
-	logrus.Infof("REQUESTING SECRETS FROM: %s", reqURL)
-	tokenBytes, err := json.Marshal(token)
-	if err != nil {
-		return returnSecrets, err
-	}
-
-	req, err := http.NewRequest("POST", reqURL, bytes.NewBuffer(tokenBytes))
+	req, err := http.NewRequest("POST", reqURL, bytes.NewBuffer(rsg.token.Value))
 	if err != nil {
 		return returnSecrets, err
 	}
 
 	req.Header.Add("Content-Type", "application/x-api-secrets-token")
+	req.SetBasicAuth(rsg.user, rsg.password)
 
 	resp, err := rsg.client.Do(req)
 	if err != nil {
+		logrus.Errorf("Response code: %s", resp.Status)
 		return returnSecrets, err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return returnSecrets, fmt.Errorf("Unsuccessful request: %s", resp.Status)
+	}
+
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return returnSecrets, err
 	}
-	logrus.Infof("rancher-resp: %#v", body)
 
-	return returnSecrets, json.Unmarshal(body, returnSecrets)
+	err = json.Unmarshal(body, &returnSecrets)
+
+	return returnSecrets, err
 }
 
 func newRancherClient() (*http.Client, error) {

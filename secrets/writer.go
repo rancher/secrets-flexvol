@@ -2,7 +2,7 @@ package secrets
 
 // SecretWriter implements the Writer interface
 type SecretWriter interface {
-	Write(secrets *bulkSecret, dst string) error
+	Write(secrets []secret, dst string) error
 }
 
 type rsaSecretFileWriter struct {
@@ -18,8 +18,8 @@ func NewRSASecretFileWriter(decryptor Decryptor, params map[string]interface{}) 
 	}, nil
 }
 
-func (rsw rsaSecretFileWriter) Write(secrets *bulkSecret, dstDir string) error {
-	for _, secret := range secrets.Data {
+func (rsw rsaSecretFileWriter) Write(secrets []secret, dstDir string) error {
+	for _, secret := range secrets {
 		plainText, err := rsw.decryptor.Decrypt(secret.RewrapText)
 		if err != nil {
 			return err

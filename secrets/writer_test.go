@@ -11,39 +11,35 @@ import (
 
 var (
 	tGet = &testGetter{
-		bulkSecrets: &bulkSecret{
-			Data: []secret{
-				secret{
-					Name:       "database_password",
-					RewrapText: "Yyaba6uZYkPHLqzzh4n6SB76tU32ugonB8uxdViUhxKpk/tThhPdQQvj4pe1k3advNOMUyIuykbnJ9EUVY4M4KRdilt6KlCQTEPrzTGw9ZxoFdBWlW2Kj3+1BZt/iy36krzryyLS+bNIDE8IRNoafaPmcto1ywQHfBjXiIjoJfYIuXpbQPOLU1ulElMv7ArwG2JbIvYcpIMysoJqaJ7YAauHveMPmAbRB/oGgS/pxIoP9vv1PMPIoP6c6h4raWXZ6uRkMJ7ND6cEq3pXLVlapYgZnOV9lbMBxQGlzApVlDo4BnMsNz/NNiaKYQs5CjO12KySuDjLkRamERL1FaKQhA==",
-				},
-				secret{
-					Name:       "database_username",
-					RewrapText: "Yyaba6uZYkPHLqzzh4n6SB76tU32ugonB8uxdViUhxKpk/tThhPdQQvj4pe1k3advNOMUyIuykbnJ9EUVY4M4KRdilt6KlCQTEPrzTGw9ZxoFdBWlW2Kj3+1BZt/iy36krzryyLS+bNIDE8IRNoafaPmcto1ywQHfBjXiIjoJfYIuXpbQPOLU1ulElMv7ArwG2JbIvYcpIMysoJqaJ7YAauHveMPmAbRB/oGgS/pxIoP9vv1PMPIoP6c6h4raWXZ6uRkMJ7ND6cEq3pXLVlapYgZnOV9lbMBxQGlzApVlDo4BnMsNz/NNiaKYQs5CjO12KySuDjLkRamERL1FaKQhA==",
-					UID:        "1000",
-					GID:        "1000",
-					Mode:       "0777",
-				},
+		Data: []secret{
+			secret{
+				Name:       "database_password",
+				RewrapText: "Yyaba6uZYkPHLqzzh4n6SB76tU32ugonB8uxdViUhxKpk/tThhPdQQvj4pe1k3advNOMUyIuykbnJ9EUVY4M4KRdilt6KlCQTEPrzTGw9ZxoFdBWlW2Kj3+1BZt/iy36krzryyLS+bNIDE8IRNoafaPmcto1ywQHfBjXiIjoJfYIuXpbQPOLU1ulElMv7ArwG2JbIvYcpIMysoJqaJ7YAauHveMPmAbRB/oGgS/pxIoP9vv1PMPIoP6c6h4raWXZ6uRkMJ7ND6cEq3pXLVlapYgZnOV9lbMBxQGlzApVlDo4BnMsNz/NNiaKYQs5CjO12KySuDjLkRamERL1FaKQhA==",
+			},
+			secret{
+				Name:       "database_username",
+				RewrapText: "Yyaba6uZYkPHLqzzh4n6SB76tU32ugonB8uxdViUhxKpk/tThhPdQQvj4pe1k3advNOMUyIuykbnJ9EUVY4M4KRdilt6KlCQTEPrzTGw9ZxoFdBWlW2Kj3+1BZt/iy36krzryyLS+bNIDE8IRNoafaPmcto1ywQHfBjXiIjoJfYIuXpbQPOLU1ulElMv7ArwG2JbIvYcpIMysoJqaJ7YAauHveMPmAbRB/oGgS/pxIoP9vv1PMPIoP6c6h4raWXZ6uRkMJ7ND6cEq3pXLVlapYgZnOV9lbMBxQGlzApVlDo4BnMsNz/NNiaKYQs5CjO12KySuDjLkRamERL1FaKQhA==",
+				UID:        "1000",
+				GID:        "1000",
+				Mode:       "0777",
 			},
 		},
 	}
 
 	expectedValues = map[string]string{
-		"database_password": "hello",
-		"database_username": "hello",
+		"database_password": "aGVsbG8=",
+		"database_username": "aGVsbG8=",
 	}
 
 	paramFixture = map[string]interface{}{
-		"io.rancher.secrets.request_token": "onetime",
+		"io.rancher.secrets.token": "onetime",
 	}
 )
 
-type testDecryptor struct {
-	key *bulkSecret
-}
+type testDecryptor struct{}
 
 type testGetter struct {
-	bulkSecrets *bulkSecret
+	Data []secret
 }
 
 func (td testDecryptor) Decrypt(text string) ([]byte, error) {
@@ -55,8 +51,8 @@ func (td testDecryptor) Decrypt(text string) ([]byte, error) {
 	return rsaDecrypt(key, text)
 }
 
-func (tg testGetter) GetSecrets(params map[string]interface{}) (*bulkSecret, error) {
-	return tg.bulkSecrets, nil
+func (tg testGetter) GetSecrets(params map[string]interface{}) ([]secret, error) {
+	return tg.Data, nil
 }
 
 func TestWriter(t *testing.T) {
@@ -82,7 +78,7 @@ func TestWriter(t *testing.T) {
 	}
 
 	//verifies writes happened
-	for _, secret := range secrets.Data {
+	for _, secret := range secrets {
 		secret.setDefaults()
 
 		fi, err := os.Stat(path.Join(dstDir, secret.Name))

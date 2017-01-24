@@ -11,7 +11,7 @@ import (
 
 const (
 	volRoot     = "/var/lib/rancher/volumes/rancher-secrets"
-	hostKeyPath = "/var/lib/rancher/etc/ssl/server.key"
+	hostKeyPath = "/var/lib/rancher/etc/ssl/host.key"
 )
 
 // FlexVolume is an empty struct to implement the interface
@@ -70,31 +70,30 @@ func (sv *FlexVolume) Attach(params map[string]interface{}) (string, error) {
 		return "", err
 	}
 
-	//secretGetter, err := NewRancherSecretGetter(params)
-	//if err != nil {
-	//return "", err
-	//}
+	secretGetter, err := NewRancherSecretGetter(params)
+	if err != nil {
+		return "", err
+	}
 
-	//secrets, err := secretGetter.GetSecrets(params)
-	//if err != nil {
-	//return "", err
-	//}
+	secrets, err := secretGetter.GetSecrets(params)
+	if err != nil {
+		logrus.Error(err)
+		return "", err
+	}
 
-	//logrus.Debugf("Secrets: %#v", secrets)
+	decryptor, err := NewRSADecryptor(hostKeyPath)
+	if err != nil {
+		logrus.Error(err)
+		return "", err
+	}
 
-	//decryptor, err := NewRSADecryptor(hostKeyPath)
-	// if err != nil {
-	//return "", err
-	//}
+	secretWriter, err := NewRSASecretFileWriter(decryptor, params)
+	if err != nil {
+		logrus.Error(err)
+		return "", err
+	}
 
-	// secretWriter, err := NewRSASecretFileWriter(decryptor, params)
-	// if err != nil {
-	// return "", err
-	// }
-
-	// err = secretWriter.Write(secrets, dir)
-
-	return volumeDevice, nil
+	return volumeDevice, secretWriter.Write(secrets, volumeDevice)
 }
 
 // Detach effectively erases the volume.

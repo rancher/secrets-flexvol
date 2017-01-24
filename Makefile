@@ -11,7 +11,7 @@ $(TARGETS): .dapper
 	./.dapper $@
 
 trash: .dapper
-	./.dapper -m bind trash
+	./.dapper trash
 
 trash-keep: .dapper
 	./.dapper -m bind trash -k
