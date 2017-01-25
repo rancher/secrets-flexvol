@@ -13,27 +13,8 @@ import (
 	"github.com/Sirupsen/logrus"
 )
 
-// SecretGetter gets the secrets froma remote source
-type SecretGetter interface {
-	GetSecrets(params map[string]interface{}) ([]secret, error)
-}
-
-type rancherSecretGetter struct {
-	user     string
-	password string
-	url      string
-	client   *http.Client
-	token    *rancherToken
-}
-
-type rancherToken struct {
-	Value []byte `json:"value"`
-}
-
 // NewRancherSecretGetter returns a new rancherSecretGetter
-func NewRancherSecretGetter(params map[string]interface{}) (SecretGetter, error) {
-	rToken := &rancherToken{}
-
+func NewRancherSecretGetter(params *options) (SecretGetter, error) {
 	client, err := newRancherClient()
 	if err != nil {
 		return &rancherSecretGetter{}, err
@@ -41,20 +22,16 @@ func NewRancherSecretGetter(params map[string]interface{}) (SecretGetter, error)
 
 	url := os.Getenv("CATTLE_URL")
 
-	if rawToken, ok := params["io.rancher.secrets.token"].(string); ok {
-		rToken.Value = []byte(strings.Replace(rawToken, "\\", "", -1))
-	}
-
 	return &rancherSecretGetter{
 		user:     os.Getenv("CATTLE_AGENT_ACCESS_KEY"),
 		password: os.Getenv("CATTLE_AGENT_SECRET_KEY"),
 		url:      strings.Replace(url, "v1", "v2-beta", 1),
 		client:   client,
-		token:    rToken,
+		token:    params.Token,
 	}, nil
 }
 
-func (rsg rancherSecretGetter) GetSecrets(params map[string]interface{}) ([]secret, error) {
+func (rsg rancherSecretGetter) GetSecrets(params *options) ([]secret, error) {
 	reqURL := rsg.url + "/secrets"
 	returnSecrets := []secret{}
 
