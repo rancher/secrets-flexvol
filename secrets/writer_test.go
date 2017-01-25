@@ -31,8 +31,10 @@ var (
 		"database_username": "aGVsbG8=",
 	}
 
-	paramFixture = map[string]interface{}{
-		"io.rancher.secrets.token": "onetime",
+	paramFixture = &options{
+		Token: &secretToken{
+			Value: []byte("onetime"),
+		},
 	}
 )
 
@@ -51,14 +53,14 @@ func (td testDecryptor) Decrypt(text string) ([]byte, error) {
 	return rsaDecrypt(key, text)
 }
 
-func (tg testGetter) GetSecrets(params map[string]interface{}) ([]secret, error) {
+func (tg testGetter) GetSecrets(params *options) ([]secret, error) {
 	return tg.Data, nil
 }
 
 func TestWriter(t *testing.T) {
 	dstDir := "/tmp/testdata"
 
-	sw, err := NewRSASecretFileWriter(testDecryptor{}, paramFixture)
+	sw, err := NewRSASecretFileWriter(testDecryptor{})
 	if err != nil {
 		t.Error(err)
 		return
@@ -69,7 +71,7 @@ func TestWriter(t *testing.T) {
 		t.Error(err)
 	}
 
-	secrets, _ := tGet.GetSecrets(map[string]interface{}{})
+	secrets, _ := tGet.GetSecrets(paramFixture)
 
 	// Calls write method
 	if err = sw.Write(secrets, dstDir); err != nil {

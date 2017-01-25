@@ -1,20 +1,9 @@
 package secrets
 
-// SecretWriter implements the Writer interface
-type SecretWriter interface {
-	Write(secrets []secret, dst string) error
-}
-
-type rsaSecretFileWriter struct {
-	decryptor Decryptor
-	params    map[string]interface{}
-}
-
 // NewRSASecretFileWriter returns a SecretWriter implemenation to talk to Rancher
-func NewRSASecretFileWriter(decryptor Decryptor, params map[string]interface{}) (SecretWriter, error) {
+func NewRSASecretFileWriter(decryptor Decryptor) (SecretWriter, error) {
 	return &rsaSecretFileWriter{
 		decryptor: decryptor,
-		params:    params,
 	}, nil
 }
 
