@@ -11,7 +11,7 @@ import (
 
 const (
 	// DefaultMode is readable only by user
-	DefaultMode = "0440"
+	DefaultMode = "0444"
 	//DefaultUID is Root
 	DefaultUID = "0"
 	//DefaultGID is Roots default group

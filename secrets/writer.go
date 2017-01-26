@@ -9,12 +9,12 @@ func NewRSASecretFileWriter(decryptor Decryptor) (SecretWriter, error) {
 
 func (rsw rsaSecretFileWriter) Write(secrets []secret, dstDir string) error {
 	for _, secret := range secrets {
-		plainText, err := rsw.decryptor.Decrypt(secret.RewrapText)
+		clearText, err := rsw.decryptor.Decrypt(secret.RewrapText)
 		if err != nil {
 			return err
 		}
 
-		err = secret.writeFile(dstDir, plainText)
+		err = secret.writeFile(dstDir, clearText)
 		if err != nil {
 			return err
 		}

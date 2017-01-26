@@ -1,12 +1,11 @@
 package secrets
 
 import (
+	"encoding/base64"
 	"io/ioutil"
 	"os"
 	"path"
 	"strconv"
-
-	"github.com/Sirupsen/logrus"
 )
 
 func (s *secret) setDefaults() error {
@@ -27,8 +26,13 @@ func (s *secret) setDefaults() error {
 
 func (s *secret) writeFile(basedir string, content []byte) error {
 	fullPath := path.Join(basedir, s.Name)
+	output := make([]byte, base64.StdEncoding.DecodedLen(len(content)))
 	// Make sure defaults are set otherwise things could fail silently.
-	logrus.Infof("Will write: %s at file %s", string(content), fullPath)
+
+	l, err := base64.StdEncoding.Decode(output, content)
+	if err != nil {
+		return err
+	}
 
 	if err := s.setDefaults(); err != nil {
 		return err
@@ -40,7 +44,7 @@ func (s *secret) writeFile(basedir string, content []byte) error {
 	}
 
 	// Create the file and always truncate
-	err = ioutil.WriteFile(fullPath, content, os.FileMode(mode))
+	err = ioutil.WriteFile(fullPath, output[:l], os.FileMode(mode))
 	if err != nil {
 		return err
 	}
