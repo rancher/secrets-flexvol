@@ -27,8 +27,8 @@ var (
 	}
 
 	expectedValues = map[string]string{
-		"database_password": "aGVsbG8=",
-		"database_username": "aGVsbG8=",
+		"database_password": "hello",
+		"database_username": "hello",
 	}
 
 	paramFixture = &options{
