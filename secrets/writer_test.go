@@ -21,7 +21,7 @@ var (
 				RewrapText: "Yyaba6uZYkPHLqzzh4n6SB76tU32ugonB8uxdViUhxKpk/tThhPdQQvj4pe1k3advNOMUyIuykbnJ9EUVY4M4KRdilt6KlCQTEPrzTGw9ZxoFdBWlW2Kj3+1BZt/iy36krzryyLS+bNIDE8IRNoafaPmcto1ywQHfBjXiIjoJfYIuXpbQPOLU1ulElMv7ArwG2JbIvYcpIMysoJqaJ7YAauHveMPmAbRB/oGgS/pxIoP9vv1PMPIoP6c6h4raWXZ6uRkMJ7ND6cEq3pXLVlapYgZnOV9lbMBxQGlzApVlDo4BnMsNz/NNiaKYQs5CjO12KySuDjLkRamERL1FaKQhA==",
 				UID:        "1000",
 				GID:        "1000",
-				Mode:       "0777",
+				Mode:       "777",
 			},
 		},
 	}
@@ -87,18 +87,18 @@ func TestWriter(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		mode, _ := strconv.ParseUint(secret.Mode, 0, 32)
+		mode, _ := strconv.ParseUint(secret.Mode, 8, 32)
 		if fi.Mode() != os.FileMode(mode) {
 			t.Errorf("Mode not set correctly, expected: %d got %d", os.FileMode(mode), fi.Mode())
 		}
 
-		uid, _ := strconv.ParseUint(secret.UID, 0, 32)
-		if uint64(fi.Sys().(*syscall.Stat_t).Uid) != uid {
+		uid, _ := strconv.Atoi(secret.UID)
+		if int(fi.Sys().(*syscall.Stat_t).Uid) != uid {
 			t.Errorf("UID not set correctly, expected: %d got %d", uid, fi.Sys().(*syscall.Stat_t).Uid)
 		}
 
-		gid, _ := strconv.ParseUint(secret.GID, 0, 32)
-		if uint64(fi.Sys().(*syscall.Stat_t).Gid) != gid {
+		gid, _ := strconv.Atoi(secret.GID)
+		if int(fi.Sys().(*syscall.Stat_t).Gid) != gid {
 			t.Errorf("Mode not set correctly, expected: %d got %d", uid, fi.Sys().(*syscall.Stat_t).Gid)
 		}
 

@@ -38,7 +38,7 @@ func (s *secret) writeFile(basedir string, content []byte) error {
 		return err
 	}
 
-	mode, err := strconv.ParseUint(s.Mode, 0, 32)
+	mode, err := strconv.ParseUint(s.Mode, 8, 32)
 	if err != nil {
 		return err
 	}
