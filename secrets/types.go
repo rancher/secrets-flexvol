@@ -1,6 +1,7 @@
 package secrets
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -24,6 +25,20 @@ type secret struct {
 	GID        string `json:"gid"`
 	Mode       string `json:"mode"`
 	RewrapText string `json:"rewrapText"`
+}
+
+type encryptedData struct {
+	EncryptionAlgorithm string           `json:"encryptionAlgorithm,omitempty"`
+	EncryptedText       string           `json:"encryptedText,omitempty"`
+	HashAlgorithm       string           `json:"hashAlgorithm,omitempty"`
+	EncryptedKey        rsaEncryptedData `json:"encryptedKey,omitempty"`
+	Signature           string           `json:"signature,omitempty"`
+}
+
+type rsaEncryptedData struct {
+	EncryptionAlgorithm string `json:"encryptionAlgorithm,omitempty"`
+	EncryptedText       string `json:"encryptedText,omitempty"`
+	HashAlgorithm       string `json:"hashAlgorithm,omitempty"`
 }
 
 type options struct {
@@ -57,6 +72,18 @@ type SecretWriter interface {
 
 type rsaSecretFileWriter struct {
 	decryptor Decryptor
+}
+
+func getEncryptedData(data string) (*encryptedData, error) {
+	encData := &encryptedData{}
+
+	encDataDecoded, err := base64.StdEncoding.DecodeString(data)
+	if err != nil {
+		return encData, err
+	}
+
+	err = json.Unmarshal(encDataDecoded, encData)
+	return encData, err
 }
 
 func newOptions(params map[string]interface{}) (*options, error) {
