@@ -25,7 +25,7 @@ func NewRancherSecretGetter(params *options) (SecretGetter, error) {
 	return &rancherSecretGetter{
 		user:     os.Getenv("CATTLE_AGENT_ACCESS_KEY"),
 		password: os.Getenv("CATTLE_AGENT_SECRET_KEY"),
-		url:      strings.Replace(url, "v1", "v2-beta", 1),
+		url:      strings.Replace(url, "/v1", "/v2-beta", 1),
 		client:   client,
 		token:    params.Token,
 	}, nil
